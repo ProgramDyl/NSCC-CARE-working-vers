@@ -52,7 +52,7 @@ public partial class NursingDbContext : IdentityDbContext<IdentityUser>
                 .AddJsonFile("appsettings.json")
                 .Build();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            optionsBuilder.UseSqlite(connectionString);
+            optionsBuilder.UseSqlServer(connectionString); // Changed from UseSqlite
         }
     }
 
@@ -61,14 +61,29 @@ public partial class NursingDbContext : IdentityDbContext<IdentityUser>
         // Call base first to configure Identity tables
         base.OnModelCreating(modelBuilder);
 
-        // Configure custom table mappings for Identity (optional)
-        // modelBuilder.Entity<IdentityUser>().ToTable("Users");
-        // modelBuilder.Entity<IdentityRole>().ToTable("Roles");
-        // modelBuilder.Entity<IdentityUserRole<string>>().ToTable("UserRoles");
-        // modelBuilder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
-        // modelBuilder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
-        // modelBuilder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims");
-        // modelBuilder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
+        // Configure Identity tables for SQL Server
+        modelBuilder.Entity<IdentityUser>(entity => {
+            entity.Property(e => e.Id).HasColumnType("nvarchar(450)");
+        });
+        modelBuilder.Entity<IdentityRole>(entity => {
+            entity.Property(e => e.Id).HasColumnType("nvarchar(450)");
+        });
+        modelBuilder.Entity<IdentityUserRole<string>>(entity => {
+            entity.Property(e => e.RoleId).HasColumnType("nvarchar(450)");
+            entity.Property(e => e.UserId).HasColumnType("nvarchar(450)");
+        });
+        modelBuilder.Entity<IdentityUserClaim<string>>(entity => {
+            entity.Property(e => e.UserId).HasColumnType("nvarchar(450)");
+        });
+        modelBuilder.Entity<IdentityUserLogin<string>>(entity => {
+            entity.Property(e => e.UserId).HasColumnType("nvarchar(450)");
+        });
+        modelBuilder.Entity<IdentityRoleClaim<string>>(entity => {
+            entity.Property(e => e.RoleId).HasColumnType("nvarchar(450)");
+        });
+        modelBuilder.Entity<IdentityUserToken<string>>(entity => {
+            entity.Property(e => e.UserId).HasColumnType("nvarchar(450)");
+        });
 
         modelBuilder.Entity<Adl>(entity =>
         {
@@ -77,7 +92,7 @@ public partial class NursingDbContext : IdentityDbContext<IdentityUser>
             entity.ToTable("ADLs");
 
             entity.Property(e => e.AdlsId).HasColumnName("ADLsID");
-            entity.Property(e => e.BathDate).HasColumnType("DATE");
+            entity.Property(e => e.BathDate).HasColumnType("date"); // Changed from "DATE"
         });
 
         modelBuilder.Entity<Behaviour>(entity =>
@@ -148,7 +163,7 @@ public partial class NursingDbContext : IdentityDbContext<IdentityUser>
             entity.ToTable("ProgressNote");
 
             entity.Property(e => e.ProgressNoteId).HasColumnName("ProgressNoteID");
-            entity.Property(e => e.Timestamp).HasColumnType("DATETIME");
+            entity.Property(e => e.Timestamp).HasColumnType("datetime2"); // Changed from "DATETIME"
         });
 
         modelBuilder.Entity<Record>(entity =>

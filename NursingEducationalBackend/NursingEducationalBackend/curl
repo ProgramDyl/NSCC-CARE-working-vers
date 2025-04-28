@@ -1,0 +1,150 @@
+# Curl command to submit Elimination data (Nested Format)
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Authorization: Bearer G1jOJtblhLw-STtQSLsXUQJtA8SJFPX3udOHqEm-Dso" \
+-H "Content-Type: application/json" \
+-d '{
+  "form-elimination-1": {
+    "IncontinentOfBladder": true,
+    "IncontinentOfBowel": false,
+    "DayOrNightProduct": "Adult Diaper - Day",
+    "LastBowelMovement": "2025-04-26T08:00:00Z",
+    "BowelRoutine": "Suppository PRN",
+    "BladderRoutine": "Scheduled toileting q2h",
+    "CatheterInsertion": false,
+    "CatheterInsertionDate": null
+  }
+}'
+
+# Curl command to submit Mobility data (Nested Format)
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Authorization: Bearer G1jOJtblhLw-STtQSLsXUQJtA8SJFPX3udOHqEm-Dso" \
+-H "Content-Type: application/json" \
+-d '{
+  "form-mobility-1": {
+    "Transfer": "1 Person Assist",
+    "Aids": "Walker",
+    "BedMobility": "Independent with setup"
+  }
+}'
+
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Authorization: Bearer G1jOJtblhLw-STtQSLsXUQJtA8SJFPX3udOHqEm-Dso" \
+-H "Content-Type: application/json" \
+-d '{
+  "form-nutrition-1": {
+    "Diet": "Regular",
+    "Assist": "Setup required",
+    "Intake": "75% of meals",
+    "Time": "2025-04-26T12:30:00Z",
+    "DietarySupplementInfo": "Ensure Plus BID",
+    "Weight": 70,
+    "Date": "2025-04-26",
+    "Method": "Oral",
+    "IvSolutionRate": null,
+    "SpecialNeeds": "Needs thickened liquids"
+  }
+}'
+
+# Curl command to submit Cognitive data (Nested Format)
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Authorization: Bearer G1jOJtblhLw-STtQSLsXUQJtA8SJFPX3udOHqEm-Dso" \
+-H "Content-Type: application/json" \
+-d '{
+  "form-cognitive-1": {
+    "Speech": "Clear",
+    "Loc": "Alert and Oriented x3",
+    "Mmse": 25,
+    "Confusion": "Occasional sundowning"
+  }
+}'
+
+# Curl command to submit Safety data (Nested Format)
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Authorization: Bearer G1jOJtblhLw-STtQSLsXUQJtA8SJFPX3udOHqEm-Dso" \
+-H "Content-Type: application/json" \
+-d '{
+  "form-safety-1": {
+    "HipProtectors": true,
+    "SideRails": "2 Up",
+    "FallRiskScale": "High",
+    "CrashMats": true,
+    "BedAlarm": true
+  }
+}'
+
+# Curl command to submit Behaviour data (Nested Format)
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Authorization: Bearer G1jOJtblhLw-STtQSLsXUQJtA8SJFPX3udOHqEm-Dso" \
+-H "Content-Type: application/json" \
+-d '{
+  "form-behaviour-1": {
+    "Report": "Patient cooperative, occasional restlessness noted in evening."
+  }
+}'
+
+# Curl command to submit ADL (Activities of Daily Living) data (Nested Format)
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Content-Type: application/json" \
+-d '{
+  "form-adl-3": {
+    "BathDate": "2025-04-26T12:00:00",
+    "TubShowerOther": "Shower",
+    "TypeOfCare": "Partial",
+    "TurningSchedule": "Every 4 hours",
+    "Teeth": "Indepensetup",
+    "FootCare": "Daily inspection",
+    "HairCare": "Minimal assistance"
+  }
+}'
+
+
+curl -X POST \
+  "http://localhost:5232/api/Auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "Password123!"
+  }'
+
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Authorization: Bearer G1jOJtblhLw-STtQSLsXUQJtA8SJFPX3udOHqEm-Dso" \
+-H "Content-Type: application/json" \
+-d '{
+  "form-skinsensoryaid-1": {
+    "Glasses": true,
+    "Hearing": "Hearing aids - bilateral",
+    "SkinIntegrityPressureUlcerRisk": "Moderate Risk",
+    "SkinIntegrityTurningSchedule": "q2h",
+    "SkinIntegrityBradenScale": 16,
+    "SkinIntegrityDressings": "Sacral dressing changed daily"
+  }
+}'
+
+# Curl command to submit Progress Note data (Nested Format)
+curl -X POST http://localhost:5232/api/patients/6/submit-data \
+-H "Authorization: Bearer G1jOJtblhLw-STtQSLsXUQJtA8SJFPX3udOHqEm-Dso" \
+-H "Content-Type: application/json" \
+-d '{
+  "form-progressnote-1": {
+    "Timestamp": "2025-04-26T14:15:00Z",
+    "Note": "Patient ambulated 50 feet with walker and 1 PA. Tolerated well. Vitals stable."
+  }
+}'
+
+curl -X POST \
+  "https://nursingdemo-e2exe0gzhhhkcdea.eastus-01.azurewebsites.net/api/patients/create" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoidXNlckBleGFtcGxlLmNvbSIsImp0aSI6IjVlYTgxZjQ0LWUxZjItNDUxNS1iYWI1LTU4NWE4YzYwNjYxNCIsIk51cnNlSWQiOiIyIiwiZXhwIjoxNzQ1NzEwNzg3LCJpc3MiOiJodHRwczovL251cnNpbmdkZW1vLWUyZXhlMGd6aGhoa2NkZWEuZWFzdHVzLTAxLmF6dXJld2Vic2l0ZXMubmV0IiwiYXVkIjoiTnVyc2luZ0VkdWNhdGlvbmFsQXBpIn0.Jp12cHNes3wIfNqkL9kDKDcLsR3pjyrKmxsOwB2TD-0" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "FullName": "Test Patient",
+    "Sex": "Female",
+    "PatientWristID": "PT8675309",
+    "DOB": "1985-06-15",
+    "AdmissionDate": "2025-04-20",
+    "NextOfKin": "Jane Smith",
+    "NextOfKinPhone": "555-123-4567",
+    "Weight": 165,
+    "Height": "5\'7\"",
+    "Allergies": "Penicillin, Latex",
+    "IsolationPrecautions": "None"
+  }'

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NursingEducationalBackend.Models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -19,12 +20,12 @@ namespace NursingEducationalBackend.Controllers
     public class PatientsWriteController : ControllerBase
     {
         private readonly NursingDbContext _context;
-
+        
         public PatientsWriteController(NursingDbContext context)
         {
             _context = context;
         }
-
+        
         //Create patient
         [HttpPost("create")]
         //[Authorize]
@@ -43,15 +44,14 @@ namespace NursingEducationalBackend.Controllers
                 return BadRequest("Unable to create patient");
             }
         }
-
-
+        
         //Assign nurseId to patient
         [HttpPost("{id}/assign-nurse/{nurseId}")]
         //[Authorize]
         public async Task<ActionResult> AssignNurseToPatient(int id, int nurseId)
         {
             var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == id);
-
+            
             if (patient != null)
             {
                 patient.NurseId = nurseId;
@@ -64,66 +64,88 @@ namespace NursingEducationalBackend.Controllers
                 return BadRequest("Nurse id unable to be assigned");
             }
         }
-
+        
         [HttpPost("{id}/submit-data")]
         public async Task<ActionResult> SubmitData(int id, [FromBody] Dictionary<string, object> patientData)
         {
-            PatientDataSubmissionHandler handler = new PatientDataSubmissionHandler();
-
-            foreach (var entry in patientData)
+            try
             {
-                var key = entry.Key;
-                var value = entry.Value;
-
-                var tableType = key.Split('-')[1];
-                var patientIdFromTitle = int.TryParse(key.Split('-')[2], out int patientId) ? patientId : -1;
-
+                PatientDataSubmissionHandler handler = new PatientDataSubmissionHandler();
+                
+                // Get patient data once outside the loop
                 var patient = await _context.Patients
-                                .Include(p => p.Records)
-                                .FirstOrDefaultAsync(p => p.PatientId == id);
-
-                var record = patient.Records.FirstOrDefault();
-
-
-                if (value != null)
+                    .Include(p => p.Records)
+                    .FirstOrDefaultAsync(p => p.PatientId == id);
+                    
+                if (patient == null)
                 {
+                    return NotFound("Patient not found");
+                }
+                    
+                var record = patient.Records.FirstOrDefault();
+                if (record == null)
+                {
+                    record = new Record { PatientId = patient.PatientId };
+                    _context.Records.Add(record);
+                    await _context.SaveChangesAsync();
+                }
+                
+                foreach (var entry in patientData)
+                {
+                    var key = entry.Key;
+                    var value = entry.Value;
+                    
+                    if (value == null) continue;
+                    
+                    string[] keyParts = key.Split('-');
+                    if (keyParts.Length < 2) continue;
+                    
+                    var tableType = keyParts[1].ToLower();
+                    var patientIdFromTitle = keyParts.Length > 2 && int.TryParse(keyParts[2], out int patientId) 
+                        ? patientId 
+                        : id;
+                    
                     switch (tableType)
                     {
                         case "elimination":
-                            handler.SubmitEliminationData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitEliminationData(_context, value, record, patientIdFromTitle);
                             break;
                         case "mobility":
-                            handler.SubmitMobilityData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitMobilityData(_context, value, record, patientIdFromTitle);
                             break;
                         case "nutrition":
-                            handler.SubmitNutritionData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitNutritionData(_context, value, record, patientIdFromTitle);
                             break;
                         case "cognitive":
-                            handler.SubmitCognitiveData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitCognitiveData(_context, value, record, patientIdFromTitle);
                             break;
                         case "safety":
-                            handler.SubmitSafetyData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitSafetyData(_context, value, record, patientIdFromTitle);
                             break;
                         case "adl":
-                            handler.SubmitAdlData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitAdlData(_context, value, record, patientIdFromTitle);
                             break;
                         case "behaviour":
-                            handler.SubmitBehaviourData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitBehaviourData(_context, value, record, patientIdFromTitle);
                             break;
                         case "progressnote":
-                            handler.SubmitProgressNoteData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitProgressNoteData(_context, value, record, patientIdFromTitle);
                             break;
                         case "skinsensoryaid":
-                            handler.SubmitSkinAndSensoryAidData(_context, value, record, patientIdFromTitle);
+                            await handler.SubmitSkinAndSensoryAidData(_context, value, record, patientIdFromTitle);
                             break;
                         case "profile":
-                            handler.SubmitProfileData(_context, value, patient);
-                            break;                        
+                            await handler.SubmitProfileData(_context, value, patient);
+                            break;
                     }
                 }
+                
+                return Ok("Data submitted successfully");
             }
-
-            return Ok();
+            catch (Exception ex)
+            {
+                return BadRequest($"Error submitting data: {ex.Message}");
+            }
         }
     }
 }

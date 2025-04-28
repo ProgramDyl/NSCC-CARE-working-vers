@@ -3,296 +3,407 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NursingEducationalBackend.DTOs;
 using NursingEducationalBackend.Models;
+using System;
+using System.Threading.Tasks;
 
 namespace NursingEducationalBackend.Utilities
 {
     public class PatientDataSubmissionHandler
     {
-        public async void SubmitEliminationData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task SubmitEliminationData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var eliminationData = JsonConvert.DeserializeObject<PatientEliminationDTO>(value.ToString());            
-            var existingEntry = await _context.Eliminations.FindAsync(patientId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var eliminationData = JsonConvert.DeserializeObject<PatientEliminationDTO>(value.ToString());            
+                var existingEntry = await _context.Eliminations.FindAsync(patientId);
 
-            if (existingEntry != null)
-            {
-                _context.Entry(existingEntry).CurrentValues.SetValues(eliminationData);
-            }
-            else
-            {
-                var eliminationEntity = new Elimination
+                if (existingEntry != null)
                 {
-                    EliminationId = patientId,
-                    IncontinentOfBladder = eliminationData.IncontinentOfBladder,
-                    IncontinentOfBowel = eliminationData.IncontinentOfBowel,
-                    DayOrNightProduct = eliminationData.DayOrNightProduct,
-                    LastBowelMovement = eliminationData.LastBowelMovement,
-                    BowelRoutine = eliminationData.BowelRoutine,
-                    BladderRoutine = eliminationData.BladderRoutine,
-                    CatheterInsertion = eliminationData.CatheterInsertion,
-                    CatheterInsertionDate = eliminationData.CatheterInsertionDate
-                };
+                    _context.Entry(existingEntry).CurrentValues.SetValues(eliminationData);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var eliminationEntity = new Elimination
+                    {
+                        // Let DB auto-generate the ID
+                        IncontinentOfBladder = eliminationData.IncontinentOfBladder,
+                        IncontinentOfBowel = eliminationData.IncontinentOfBowel,
+                        DayOrNightProduct = eliminationData.DayOrNightProduct,
+                        LastBowelMovement = eliminationData.LastBowelMovement,
+                        BowelRoutine = eliminationData.BowelRoutine,
+                        BladderRoutine = eliminationData.BladderRoutine,
+                        CatheterInsertion = eliminationData.CatheterInsertion,
+                        CatheterInsertionDate = eliminationData.CatheterInsertionDate
+                    };
 
-                _context.Eliminations.Add(eliminationEntity);               
-                record.EliminationId = eliminationEntity.EliminationId;
-                
+                    _context.Eliminations.Add(eliminationEntity);
+                    await _context.SaveChangesAsync();
+                    
+                    record.EliminationId = eliminationEntity.EliminationId;
+                    _context.Update(record);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
-
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitMobilityData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task SubmitMobilityData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var mobilityData = JsonConvert.DeserializeObject<PatientMobilityDTO>(value.ToString());            
-            var existingEntry = await _context.Mobilities.FindAsync(patientId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var mobilityData = JsonConvert.DeserializeObject<PatientMobilityDTO>(value.ToString());            
+                var existingEntry = await _context.Mobilities.FindAsync(patientId);
 
-            if (existingEntry != null)
-            {
-                _context.Entry(existingEntry).CurrentValues.SetValues(mobilityData);
-            }
-            else
-            {
-                var mobilityEntity = new Mobility
+                if (existingEntry != null)
                 {
-                    MobilityId = patientId,
-                    Transfer = mobilityData.Transfer,
-                    Aids = mobilityData.Aids,
-                    BedMobility = mobilityData.BedMobility
-                };
+                    _context.Entry(existingEntry).CurrentValues.SetValues(mobilityData);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var mobilityEntity = new Mobility
+                    {
+                        // Let DB auto-generate the ID
+                        Transfer = mobilityData.Transfer,
+                        Aids = mobilityData.Aids,
+                        BedMobility = mobilityData.BedMobility
+                    };
 
-                _context.Mobilities.Add(mobilityEntity);               
-                record.MobilityId = mobilityEntity.MobilityId;
-                
+                    _context.Mobilities.Add(mobilityEntity);
+                    await _context.SaveChangesAsync();
+                    
+                    record.MobilityId = mobilityEntity.MobilityId;
+                    _context.Update(record);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitNutritionData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task SubmitNutritionData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var nutritionData = JsonConvert.DeserializeObject<PatientNutritionDTO>(value.ToString());            
-            var existingEntry = await _context.Nutritions.FindAsync(patientId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var nutritionData = JsonConvert.DeserializeObject<PatientNutritionDTO>(value.ToString());            
+                var existingEntry = await _context.Nutritions.FindAsync(patientId);
 
-            if (existingEntry != null)
-            {
-                _context.Entry(existingEntry).CurrentValues.SetValues(nutritionData);
-            }
-            else
-            {
-                var nutritionEntity = new Nutrition
+                if (existingEntry != null)
                 {
-                    NutritionId = patientId,
-                    Diet = nutritionData.Diet,
-                    Assist = nutritionData.Assist,
-                    Intake = nutritionData.Intake,
-                    Time = nutritionData.Time,
-                    DietarySupplementInfo = nutritionData.DietarySupplementInfo,
-                    Weight = nutritionData.Weight,
-                    Date = nutritionData.Date,
-                    Method = nutritionData.Method,
-                    IvSolutionRate = nutritionData.IvSolutionRate,
-                    SpecialNeeds = nutritionData.SpecialNeeds
-                };
+                    _context.Entry(existingEntry).CurrentValues.SetValues(nutritionData);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var nutritionEntity = new Nutrition
+                    {
+                        // Let DB auto-generate the ID
+                        Diet = nutritionData.Diet,
+                        Assist = nutritionData.Assist,
+                        Intake = nutritionData.Intake,
+                        Time = nutritionData.Time,
+                        DietarySupplementInfo = nutritionData.DietarySupplementInfo,
+                        Weight = nutritionData.Weight,
+                        Date = nutritionData.Date,
+                        Method = nutritionData.Method,
+                        IvSolutionRate = nutritionData.IvSolutionRate,
+                        SpecialNeeds = nutritionData.SpecialNeeds
+                    };
 
-                _context.Nutritions.Add(nutritionEntity);
-                record.NutritionId = nutritionEntity.NutritionId;
-                
+                    _context.Nutritions.Add(nutritionEntity);
+                    await _context.SaveChangesAsync();
+                    
+                    record.NutritionId = nutritionEntity.NutritionId;
+                    _context.Update(record);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitCognitiveData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task SubmitCognitiveData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var cognitiveData = JsonConvert.DeserializeObject<PatientCognitiveDTO>(value.ToString());   
-            var existingEntry = await _context.Cognitives.FindAsync(patientId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var cognitiveData = JsonConvert.DeserializeObject<PatientCognitiveDTO>(value.ToString());   
+                var existingEntry = await _context.Cognitives.FindAsync(patientId);
 
-            if (existingEntry != null)
-            {
-                _context.Entry(existingEntry).CurrentValues.SetValues(cognitiveData);
-            }
-            else
-            {
-                var cognitiveEntity = new Cognitive
+                if (existingEntry != null)
                 {
-                    CognitiveId = patientId,
-                    Speech = cognitiveData.Speech,
-                    Loc = cognitiveData.Loc,
-                    Mmse = cognitiveData.Mmse,
-                    Confusion = cognitiveData.Confusion                      
-                };
+                    _context.Entry(existingEntry).CurrentValues.SetValues(cognitiveData);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var cognitiveEntity = new Cognitive
+                    {
+                        // Let DB auto-generate the ID
+                        Speech = cognitiveData.Speech,
+                        Loc = cognitiveData.Loc,
+                        Mmse = cognitiveData.Mmse,
+                        Confusion = cognitiveData.Confusion                      
+                    };
 
-                _context.Cognitives.Add(cognitiveEntity);               
-                record.CognitiveId = cognitiveEntity.CognitiveId;
-                
+                    _context.Cognitives.Add(cognitiveEntity);
+                    await _context.SaveChangesAsync();
+                    
+                    record.CognitiveId = cognitiveEntity.CognitiveId;
+                    _context.Update(record);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitSafetyData(NursingDbContext _context, object value,  Record record, int patientId)
+        public async Task SubmitSafetyData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var safetyData = JsonConvert.DeserializeObject<PatientSafetyDTO>(value.ToString());            
-            var existingEntry = await _context.Safeties.FindAsync(patientId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var safetyData = JsonConvert.DeserializeObject<PatientSafetyDTO>(value.ToString());            
+                var existingEntry = await _context.Safeties.FindAsync(patientId);
 
-            if (existingEntry != null)
-            {
-                _context.Entry(existingEntry).CurrentValues.SetValues(safetyData);
-            }
-            else
-            {
-                var safetyEntity = new Safety
+                if (existingEntry != null)
                 {
-                    SafetyId = patientId,
-                    HipProtectors = safetyData.HipProtectors,
-                    SideRails = safetyData.SideRails,
-                    FallRiskScale = safetyData.FallRiskScale,
-                    CrashMats = safetyData.CrashMats,
-                    BedAlarm = safetyData.BedAlarm
-                };
+                    _context.Entry(existingEntry).CurrentValues.SetValues(safetyData);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var safetyEntity = new Safety
+                    {
+                        // Let DB auto-generate the ID
+                        HipProtectors = safetyData.HipProtectors,
+                        SideRails = safetyData.SideRails,
+                        FallRiskScale = safetyData.FallRiskScale,
+                        CrashMats = safetyData.CrashMats,
+                        BedAlarm = safetyData.BedAlarm
+                    };
 
-                _context.Safeties.Add(safetyEntity);               
-                 record.SafetyId = safetyEntity.SafetyId;
-                
+                    _context.Safeties.Add(safetyEntity);
+                    await _context.SaveChangesAsync();
+                    
+                    record.SafetyId = safetyEntity.SafetyId;
+                    _context.Update(record);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitAdlData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task SubmitAdlData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var adlData = JsonConvert.DeserializeObject<PatientAdlDTO>(value.ToString());            
-            var existingEntry = await _context.Adls.FindAsync(patientId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var adlData = JsonConvert.DeserializeObject<PatientAdlDTO>(value.ToString());            
+                var existingEntry = await _context.Adls.FindAsync(patientId);
 
-            if (existingEntry != null)
-            {
-                _context.Entry(existingEntry).CurrentValues.SetValues(adlData);
-            }
-            else
-            {
-                var adlEntity = new Adl
+                if (existingEntry != null)
                 {
-                    AdlsId = patientId,
-                    BathDate = adlData.BathDate,
-                    TubShowerOther = adlData.TubShowerOther,
-                    TypeOfCare = adlData.TypeOfCare,
-                    TurningSchedule = adlData.TurningSchedule,
-                    Teeth = adlData.Teeth,
-                    FootCare = adlData.FootCare,
-                    HairCare = adlData.HairCare
-                };
+                    _context.Entry(existingEntry).CurrentValues.SetValues(adlData);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var adlEntity = new Adl
+                    {
+                        // Let DB auto-generate the ID
+                        BathDate = adlData.BathDate,
+                        TubShowerOther = adlData.TubShowerOther,
+                        TypeOfCare = adlData.TypeOfCare,
+                        TurningSchedule = adlData.TurningSchedule,
+                        Teeth = adlData.Teeth,
+                        FootCare = adlData.FootCare,
+                        HairCare = adlData.HairCare
+                    };
 
-                _context.Adls.Add(adlEntity);               
-                record.AdlsId = adlEntity.AdlsId;
-                
+                    _context.Adls.Add(adlEntity);
+                    await _context.SaveChangesAsync();
+                    
+                    record.AdlsId = adlEntity.AdlsId;
+                    _context.Update(record);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitBehaviourData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task SubmitBehaviourData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var behaviourData = JsonConvert.DeserializeObject<PatientBehaviourDTO>(value.ToString());            
-            var existingEntry = await _context.Behaviours.FindAsync(patientId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var behaviourData = JsonConvert.DeserializeObject<PatientBehaviourDTO>(value.ToString());            
+                var existingEntry = await _context.Behaviours.FindAsync(patientId);
 
-            if (existingEntry != null)
-            {
-                _context.Entry(existingEntry).CurrentValues.SetValues(behaviourData);
-            }
-            else
-            {
-                var behaviourEntity = new Behaviour
+                if (existingEntry != null)
                 {
-                    BehaviourId = patientId,
-                    Report = behaviourData.Report,
-                   
-                };
+                    _context.Entry(existingEntry).CurrentValues.SetValues(behaviourData);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var behaviourEntity = new Behaviour
+                    {
+                        // Let DB auto-generate the ID
+                        Report = behaviourData.Report
+                    };
 
-                _context.Behaviours.Add(behaviourEntity);               
-                 record.BehaviourId = behaviourEntity.BehaviourId;
-                
+                    _context.Behaviours.Add(behaviourEntity);
+                    await _context.SaveChangesAsync();
+                    
+                    record.BehaviourId = behaviourEntity.BehaviourId;
+                    _context.Update(record);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitSkinAndSensoryAidData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task SubmitSkinAndSensoryAidData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var skinData = JsonConvert.DeserializeObject<PatientSkinDTO>(value.ToString());            
-            var existingEntry = await _context.SkinAndSensoryAids.FindAsync(patientId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var skinData = JsonConvert.DeserializeObject<PatientSkinDTO>(value.ToString());            
+                var existingEntry = await _context.SkinAndSensoryAids.FindAsync(patientId);
 
-            if (existingEntry != null)
-            {
-                _context.Entry(existingEntry).CurrentValues.SetValues(skinData);
-            }
-            else
-            {
-                var skinAndSensoryAidsEntity = new SkinAndSensoryAid
+                if (existingEntry != null)
                 {
-                    SkinAndSensoryAidsId = patientId,
-                    Glasses = skinData.Glasses,
-                    Hearing = skinData.Hearing,
-                    SkinIntegrityPressureUlcerRisk = skinData.SkinIntegrityPressureUlcerRisk,
-                    SkinIntegrityTurningSchedule = skinData.SkinIntegrityTurningSchedule,
-                    SkinIntegrityBradenScale = skinData.SkinIntegrityBradenScale,
-                    SkinIntegrityDressings = skinData.SkinIntegrityDressings
+                    _context.Entry(existingEntry).CurrentValues.SetValues(skinData);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    var skinAndSensoryAidsEntity = new SkinAndSensoryAid
+                    {
+                        // Let DB auto-generate the ID
+                        Glasses = skinData.Glasses,
+                        Hearing = skinData.Hearing,
+                        SkinIntegrityPressureUlcerRisk = skinData.SkinIntegrityPressureUlcerRisk,
+                        SkinIntegrityTurningSchedule = skinData.SkinIntegrityTurningSchedule,
+                        SkinIntegrityBradenScale = skinData.SkinIntegrityBradenScale,
+                        SkinIntegrityDressings = skinData.SkinIntegrityDressings
+                    };
 
-                };
+                    _context.SkinAndSensoryAids.Add(skinAndSensoryAidsEntity);
+                    await _context.SaveChangesAsync();
+                    
+                    record.SkinId = skinAndSensoryAidsEntity.SkinAndSensoryAidsId;
+                    _context.Update(record);
+                    await _context.SaveChangesAsync();
+                }
 
-                _context.SkinAndSensoryAids.Add(skinAndSensoryAidsEntity);                
-                 record.SkinId = skinAndSensoryAidsEntity.SkinAndSensoryAidsId;
-                
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitProgressNoteData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task SubmitProgressNoteData(NursingDbContext _context, object value, Record record, int patientId)
         {
-            var progressNoteData = JsonConvert.DeserializeObject<PatientProgressNoteDTO>(value.ToString());            
-            var existingEntry = await _context.ProgressNotes.FindAsync(patientId);
-
-            if (existingEntry != null)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                _context.Entry(existingEntry).CurrentValues.SetValues(progressNoteData);
-            }
-            else
-            {
+                var progressNoteData = JsonConvert.DeserializeObject<PatientProgressNoteDTO>(value.ToString());
+                
+                // Create a new progress note without specifying the ID
                 var progressNoteEntity = new ProgressNote
                 {
-                    ProgressNoteId = patientId,
+                    // Don't set ProgressNoteId - let the database generate it
                     Timestamp = progressNoteData.Timestamp,
                     Note = progressNoteData.Note
                 };
 
-                _context.ProgressNotes.Add(progressNoteEntity);               
-                 record.ProgressNoteId = progressNoteEntity.ProgressNoteId;
+                // Add to database first to get the auto-generated ID
+                _context.ProgressNotes.Add(progressNoteEntity);
+                await _context.SaveChangesAsync();
                 
+                // Now update the record with the generated ID
+                record.ProgressNoteId = progressNoteEntity.ProgressNoteId;
+                _context.Update(record);
+                await _context.SaveChangesAsync();
+                
+                await transaction.CommitAsync();
             }
-
-            await _context.SaveChangesAsync();
-            
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async void SubmitProfileData(NursingDbContext _context, object value, Patient patient)
+        public async Task SubmitProfileData(NursingDbContext _context, object value, Patient patient)
         {
-            var profileData = JsonConvert.DeserializeObject<PatientProfileDTO>(value.ToString());           
-            var existingEntry = await _context.Patients.FindAsync(patient.PatientId);          
-            _context.Entry(existingEntry).CurrentValues.SetValues(profileData);          
-            await _context.SaveChangesAsync();
-            
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var profileData = JsonConvert.DeserializeObject<PatientProfileDTO>(value.ToString());           
+                var existingEntry = await _context.Patients.FindAsync(patient.PatientId);
+                
+                if (existingEntry != null)
+                {
+                    _context.Entry(existingEntry).CurrentValues.SetValues(profileData);
+                    await _context.SaveChangesAsync();
+                }
+                
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
-
-
-
-    
 }

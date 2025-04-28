@@ -18,7 +18,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
         builder => builder
-            .AllowAnyOrigin()
+            .AllowAnyOrigin()     // ← this replaces .WithOrigins(...)
             .AllowAnyMethod()
             .AllowAnyHeader());
 });
@@ -28,7 +28,7 @@ Console.WriteLine($"[DEBUG] Using connection string: {defaultConnection}");
 
 
 builder.Services.AddDbContext<NursingDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Identity services
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
@@ -57,29 +57,33 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.User.RequireUniqueEmail = true;
 });
 
-// Add JWT Authentication
+// --- JWT Authentication Section: Uncommented ---
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+   options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+   options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+   options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
     options.SaveToken = true;
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = false; // Set to true in production if using HTTPS
     options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["JwtSettings:Audience"],
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
+        ValidAudience = builder.Configuration["JwtSettings:Audience"], // Ensure this is set in Azure App Settings
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],     // Ensure this is set in Azure App Settings
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])) // Ensure this is set in Azure App Settings and is strong/long enough
     };
 });
+// --- End JWT Authentication Section ---
 
 // Add Authorization
 builder.Services.AddAuthorization();
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 
 var app = builder.Build();
 
@@ -90,15 +94,18 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
-//app.UseHttpsRedirection();
+//app.UseHttpsRedirection(); // Consider enabling this in production
 
 app.UseStaticFiles();
 
+// --- Authentication/Authorization Middleware: Uncommented ---
 // Add authentication middleware before authorization
 app.UseAuthentication();
 app.UseAuthorization();
+// --- End Authentication/Authorization Middleware ---
 
 app.MapControllers();
+
 // Add this after setting up Identity services
 if (app.Environment.IsDevelopment())
 {
@@ -128,23 +135,35 @@ if (app.Environment.IsDevelopment())
                 EmailConfirmed = true
             };
 
-            await userManager.CreateAsync(adminUser, "Admin123!");
-            await userManager.AddToRoleAsync(adminUser, "Admin");
-
-            // Create corresponding entry in Nurse table
-            var dbContext = scope.ServiceProvider.GetRequiredService<NursingDbContext>();
-            var adminNurse = new Nurse
+            // Ensure you have a strong password policy compliant password
+            var result = await userManager.CreateAsync(adminUser, "Admin123!");
+            if (result.Succeeded)
             {
-                Email = adminEmail,
-                FullName = "System Administrator",
-                StudentNumber = "ADMIN"
-            };
+                await userManager.AddToRoleAsync(adminUser, "Admin");
 
-            await dbContext.Nurses.AddAsync(adminNurse);
-            await dbContext.SaveChangesAsync();
+                // Create corresponding entry in Nurse table
+                var dbContext = scope.ServiceProvider.GetRequiredService<NursingDbContext>();
+                var adminNurse = new Nurse
+                {
+                    Email = adminEmail,
+                    FullName = "System Administrator",
+                    StudentNumber = "ADMIN"
+                };
 
-            // Add NurseId claim
-            await userManager.AddClaimAsync(adminUser, new Claim("NurseId", adminNurse.NurseId.ToString()));
+                await dbContext.Nurses.AddAsync(adminNurse);
+                await dbContext.SaveChangesAsync();
+
+                // Add NurseId claim
+                await userManager.AddClaimAsync(adminUser, new Claim("NurseId", adminNurse.NurseId.ToString()));
+            }
+            else
+            {
+                // Log errors if user creation failed
+                foreach (var error in result.Errors)
+                {
+                    Console.WriteLine($"Error creating admin user: {error.Description}");
+                }
+            }
         }
     }
 }
