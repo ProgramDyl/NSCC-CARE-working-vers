@@ -20,10 +20,12 @@ namespace NursingEducationalBackend.Controllers
     public class PatientsWriteController : ControllerBase
     {
         private readonly NursingDbContext _context;
+        private readonly PatientDataSubmissionHandler _submissionHandler;
         
         public PatientsWriteController(NursingDbContext context)
         {
             _context = context;
+            _submissionHandler = new PatientDataSubmissionHandler();
         }
         
         //Create patient
@@ -33,15 +35,34 @@ namespace NursingEducationalBackend.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Patients.Add(patient);
-                await _context.SaveChangesAsync();
-                _context.Records.Add(new Record { PatientId = patient.PatientId });
-                await _context.SaveChangesAsync();
-                return Ok();
+                try
+                {
+                    // Check if the unit and bed combination already exists
+                    if (!string.IsNullOrEmpty(patient.Unit) && patient.BedNumber.HasValue)
+                    {
+                        bool duplicateExists = await _context.Patients
+                            .AnyAsync(p => p.Unit == patient.Unit && p.BedNumber == patient.BedNumber);
+                        
+                        if (duplicateExists)
+                        {
+                            return BadRequest($"A patient is already assigned to Unit {patient.Unit}, Bed {patient.BedNumber}. This combination must be unique.");
+                        }
+                    }
+                    
+                    _context.Patients.Add(patient);
+                    await _context.SaveChangesAsync();
+                    _context.Records.Add(new Record { PatientId = patient.PatientId });
+                    await _context.SaveChangesAsync();
+                    return Ok();
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Unable to create patient: {ex.Message}");
+                }
             }
             else
             {
-                return BadRequest("Unable to create patient");
+                return BadRequest("Unable to create patient: Invalid model state");
             }
         }
         
@@ -70,8 +91,6 @@ namespace NursingEducationalBackend.Controllers
         {
             try
             {
-                PatientDataSubmissionHandler handler = new PatientDataSubmissionHandler();
-                
                 // Get patient data once outside the loop
                 var patient = await _context.Patients
                     .Include(p => p.Records)
@@ -82,7 +101,7 @@ namespace NursingEducationalBackend.Controllers
                     return NotFound("Patient not found");
                 }
                     
-                var record = patient.Records.FirstOrDefault();
+                var record = patient.Records?.FirstOrDefault();
                 if (record == null)
                 {
                     record = new Record { PatientId = patient.PatientId };
@@ -108,34 +127,39 @@ namespace NursingEducationalBackend.Controllers
                     switch (tableType)
                     {
                         case "elimination":
-                            await handler.SubmitEliminationData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitEliminationData(_context, value, record, patientIdFromTitle);
                             break;
                         case "mobility":
-                            await handler.SubmitMobilityData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitMobilityData(_context, value, record, patientIdFromTitle);
                             break;
                         case "nutrition":
-                            await handler.SubmitNutritionData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitNutritionData(_context, value, record, patientIdFromTitle);
                             break;
                         case "cognitive":
-                            await handler.SubmitCognitiveData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitCognitiveData(_context, value, record, patientIdFromTitle);
                             break;
                         case "safety":
-                            await handler.SubmitSafetyData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitSafetyData(_context, value, record, patientIdFromTitle);
                             break;
                         case "adl":
-                            await handler.SubmitAdlData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitAdlData(_context, value, record, patientIdFromTitle);
                             break;
                         case "behaviour":
-                            await handler.SubmitBehaviourData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitBehaviourData(_context, value, record, patientIdFromTitle);
                             break;
                         case "progressnote":
-                            await handler.SubmitProgressNoteData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitProgressNoteData(_context, value, record, patientIdFromTitle);
                             break;
                         case "skinsensoryaid":
-                            await handler.SubmitSkinAndSensoryAidData(_context, value, record, patientIdFromTitle);
+                            await _submissionHandler.SubmitSkinAndSensoryAidData(_context, value, record, patientIdFromTitle);
                             break;
                         case "profile":
-                            await handler.SubmitProfileData(_context, value, patient);
+                            try {
+                                await _submissionHandler.SubmitProfileData(_context, value, patient);
+                            } catch (InvalidOperationException ex) {
+                                // Capture specific validation errors from the handler
+                                return BadRequest(ex.Message);
+                            }
                             break;
                     }
                 }

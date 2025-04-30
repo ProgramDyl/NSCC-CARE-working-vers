@@ -21,5 +21,7 @@ namespace NursingEducationalBackend.DTOs
 
         [Required]
         public string StudentNumber { get; set; }
+        [Required]
+        public string Campus { get; set; }
     }
 }

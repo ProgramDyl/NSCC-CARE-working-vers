@@ -371,6 +371,10 @@ namespace NursingEducationalBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NurseId"));
 
+                    b.Property<string>("Campus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -500,7 +504,7 @@ namespace NursingEducationalBackend.Migrations
 
                     b.Property<string>("PatientWristId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("nvarchar(450)")
                         .HasColumnName("PatientWristID");
 
                     b.Property<string>("RoamAlertBracelet")
@@ -510,12 +514,19 @@ namespace NursingEducationalBackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Weight")
                         .HasColumnType("int");
 
                     b.HasKey("PatientId");
 
                     b.HasIndex("NurseId");
+
+                    b.HasIndex("PatientWristId")
+                        .IsUnique();
 
                     b.HasIndex(new[] { "PatientId" }, "IX_Patient_PatientID")
                         .IsUnique();

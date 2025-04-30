@@ -66,7 +66,8 @@ namespace NursingEducationalBackend.Controllers
             {
                 Email = model.Email,
                 FullName = model.FullName,
-                StudentNumber = model.StudentNumber
+                StudentNumber = model.StudentNumber,
+                Campus = model.Campus  // Add the new Campus field
             };
 
             await _context.Nurses.AddAsync(nurse);
@@ -74,6 +75,9 @@ namespace NursingEducationalBackend.Controllers
 
             // Update the user with NurseId claim
             await _userManager.AddClaimAsync(user, new Claim("NurseId", nurse.NurseId.ToString()));
+
+            // Add Campus as a claim
+            await _userManager.AddClaimAsync(user, new Claim("Campus", nurse.Campus));
 
             return Ok(new { Success = true, Message = "User registered successfully!" });
         }
@@ -102,13 +106,31 @@ namespace NursingEducationalBackend.Controllers
             // Get user roles
             var userRoles = await _userManager.GetRolesAsync(user);
 
+            // Get user claims
+            var userClaims = await _userManager.GetClaimsAsync(user);
+            var campusClaim = userClaims.FirstOrDefault(c => c.Type == "Campus");
+
             // Create claims
             var authClaims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, user.UserName),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim("NurseId", nurse.NurseId.ToString())
+    };
+
+            // Add Campus claim to token if it exists
+            if (campusClaim != null)
             {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("NurseId", nurse.NurseId.ToString())
-            };
+                authClaims.Add(new Claim("Campus", campusClaim.Value));
+            }
+            else if (!string.IsNullOrEmpty(nurse.Campus))
+            {
+                // Fallback to nurse record if claim doesn't exist (for existing users)
+                authClaims.Add(new Claim("Campus", nurse.Campus));
+
+                // Optionally add the claim to the user for future logins
+                await _userManager.AddClaimAsync(user, new Claim("Campus", nurse.Campus));
+            }
 
             // Add role claims
             foreach (var userRole in userRoles)
@@ -126,10 +148,10 @@ namespace NursingEducationalBackend.Controllers
                 NurseId = nurse.NurseId,
                 FullName = nurse.FullName,
                 Email = nurse.Email,
+                Campus = nurse.Campus,  // Add the Campus to the login response
                 Roles = userRoles.ToList()
             });
         }
-
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {

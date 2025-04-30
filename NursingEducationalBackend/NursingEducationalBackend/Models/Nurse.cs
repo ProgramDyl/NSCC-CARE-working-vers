@@ -14,6 +14,7 @@ public partial class Nurse
 
     public string Email { get; set; }
 
+     public string Campus { get; set; }
     //public string Password { get; set; }
 
     public virtual ICollection<Patient>? Patients { get; set; } = new List<Patient>();

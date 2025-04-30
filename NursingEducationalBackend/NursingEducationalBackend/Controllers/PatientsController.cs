@@ -37,6 +37,87 @@ namespace NursingEducationalBackend.Controllers
             return Ok(patient);
         }
 
+        // POST: api/Patients
+        [HttpPost]
+        public async Task<ActionResult<Patient>> CreatePatient(Patient patient)
+        {
+            try
+            {
+                // Check if the unit and bed combination already exists
+                if (!string.IsNullOrEmpty(patient.Unit) && patient.BedNumber.HasValue)
+                {
+                    bool duplicateExists = await _context.Patients
+                        .AnyAsync(p => p.Unit == patient.Unit && p.BedNumber == patient.BedNumber);
+                    
+                    if (duplicateExists)
+                    {
+                        return BadRequest(new { message = $"A patient is already assigned to Unit {patient.Unit}, Bed {patient.BedNumber}. This combination must be unique." });
+                    }
+                }
+
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetPatientById), new { id = patient.PatientId }, patient);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error creating patient", error = ex.Message });
+            }
+        }
+
+        // PUT: api/Patients/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePatient(int id, Patient patient)
+        {
+            if (id != patient.PatientId)
+            {
+                return BadRequest(new { message = "Patient ID mismatch" });
+            }
+
+            try
+            {
+                // Check if the unit and bed combination already exists (excluding this patient)
+                if (!string.IsNullOrEmpty(patient.Unit) && patient.BedNumber.HasValue)
+                {
+                    bool duplicateExists = await _context.Patients
+                        .AnyAsync(p => p.PatientId != patient.PatientId && 
+                                      p.Unit == patient.Unit && 
+                                      p.BedNumber == patient.BedNumber);
+                    
+                    if (duplicateExists)
+                    {
+                        return BadRequest(new { message = $"A patient is already assigned to Unit {patient.Unit}, Bed {patient.BedNumber}. This combination must be unique." });
+                    }
+                }
+
+                _context.Entry(patient).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!PatientExists(id))
+                {
+                    return NotFound(new { message = $"Patient with ID {id} not found" });
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error updating patient", error = ex.Message });
+            }
+        }
+
+        private bool PatientExists(int id)
+        {
+            return _context.Patients.Any(e => e.PatientId == id);
+        }
+
         // GET: api/Patients/admin/ids
         [HttpGet("admin/ids")]
         [Authorize(Roles = "Admin")]
@@ -105,103 +186,109 @@ namespace NursingEducationalBackend.Controllers
             }
         }
 
-
         // GET: api/Patients/nurse/patient/{id}/{tableType}
         [HttpGet("nurse/patient/{id}/{tableType}")]
         //[Authorize]
         public async Task<ActionResult<object>> GetPatientByTableForNurse(int id, string tableType)
         {
-            // Get NurseId from claims
-            //var nurseIdClaim = User.Claims.FirstOrDefault(c => c.Type == "NurseId");
-            //if (nurseIdClaim == null)
-            //    return Unauthorized(new { message = "Invalid token or missing NurseId claim" });
-
-            //int nurseId;
-            //if (!int.TryParse(nurseIdClaim.Value, out nurseId))
-            //    return BadRequest(new { message = "Invalid NurseId format" });
-
-
-            // Get the patient - only if assigned to this nurse or unassigned
-            var patient = await _context.Patients
-                .Include(p => p.Records)
-                .FirstOrDefaultAsync(p => p.PatientId == id); 
-            //&& (p.NurseId == nurseId || p.NurseId == null));
-
-
-
-            if (patient == null)
+            try
             {
-                return NotFound();
-            }
+                // Get NurseId from claims
+                var nurseIdClaim = User.Claims.FirstOrDefault(c => c.Type == "NurseId");
+                //if (nurseIdClaim == null)
+                //    return Unauthorized(new { message = "Invalid token or missing NurseId claim" });
 
-            int? tableId = null;
-            if (patient.Records != null && patient.Records.Count != 0)
-            {
-                var record = patient.Records.FirstOrDefault();
-
-                tableId = tableType.ToLower() switch
+                int nurseId = 0; // Initialize to a default value.
+                if (nurseIdClaim != null) //check if the nurseIdClaim is null
                 {
-                    "adl" => record.AdlsId,
-                    "behaviour" => record.BehaviourId,
-                    "cognitive" => record.CognitiveId,
-                    "elimination" => record.EliminationId,
-                    "mobility" => record.MobilityId,
-                    "nutrition" => record.NutritionId,
-                    "progressnote" => record.ProgressNoteId,
-                    "safety" => record.SafetyId,
-                    "skinandsensoryaid" => record.SkinId,
-                    _ => null
-
-                };
-            }
-
-            object tableData = null;
-            if (tableId != null)
-            {
-                switch (tableType.ToLower())
-                {
-                    case "adl":
-                        tableData = await _context.Adls.FirstOrDefaultAsync(a => a.AdlsId == tableId);
-                        break;
-                    case "behaviour":
-                        tableData = await _context.Behaviours.FirstOrDefaultAsync(b => b.BehaviourId == tableId);
-                        break;
-                    case "cognitive":
-                        tableData = await _context.Cognitives.FirstOrDefaultAsync(c => c.CognitiveId == tableId);
-                        break;
-                    case "elimination":
-                        tableData = await _context.Eliminations.FirstOrDefaultAsync(e => e.EliminationId == tableId);
-                        break;
-                    case "mobility":
-                        tableData = await _context.Mobilities.FirstOrDefaultAsync(m => m.MobilityId == tableId);
-                        break;
-                    case "nutrition":
-                        tableData = await _context.Nutritions.FirstOrDefaultAsync(n => n.NutritionId == tableId);
-                        break;
-                    case "progressnote":
-                        tableData = await _context.ProgressNotes.FirstOrDefaultAsync(pn => pn.ProgressNoteId == tableId);
-                        break;
-                    case "safety":
-                        tableData = await _context.Safeties.FirstOrDefaultAsync(s => s.SafetyId == tableId);
-                        break;
-                    case "skinandsensoryaid":
-                        tableData = await _context.SkinAndSensoryAids.FirstOrDefaultAsync(s => s.SkinAndSensoryAidsId == tableId);
-                        break;
-                    default:
-                        return BadRequest(new { message = "Invalid table type" });
+                    if (!int.TryParse(nurseIdClaim.Value, out nurseId))
+                        return BadRequest(new { message = "Invalid NurseId format" });
                 }
-            }
 
-            if (tableData == null)
+                // Get the patient - only if assigned to this nurse or unassigned
+                var patient = await _context.Patients
+                    .Include(p => p.Records)
+                    .FirstOrDefaultAsync(p => p.PatientId == id);
+                //&& (p.NurseId == nurseId || p.NurseId == null));  Removed NurseId check
+
+
+                if (patient == null)
+                {
+                    return NotFound();
+                }
+
+                int? tableId = null;
+                if (patient.Records != null && patient.Records.Count() != 0)
+                {
+                    var record = patient.Records.FirstOrDefault();
+
+                    tableId = tableType.ToLower() switch
+                    {
+                        "adl" => record?.AdlsId, //handle null record
+                        "behaviour" => record?.BehaviourId,
+                        "cognitive" => record?.CognitiveId,
+                        "elimination" => record?.EliminationId,
+                        "mobility" => record?.MobilityId,
+                        "nutrition" => record?.NutritionId,
+                        "progressnote" => record?.ProgressNoteId,
+                        "safety" => record?.SafetyId,
+                        "skinandsensoryaid" => record?.SkinId,
+                        _ => null
+
+                    };
+                }
+
+                object tableData = null;
+                if (tableId != null)
+                {
+                    switch (tableType.ToLower())
+                    {
+                        case "adl":
+                            tableData = await _context.Adls.FirstOrDefaultAsync(a => a.AdlsId == tableId);
+                            break;
+                        case "behaviour":
+                            tableData = await _context.Behaviours.FirstOrDefaultAsync(b => b.BehaviourId == tableId);
+                            break;
+                        case "cognitive":
+                            tableData = await _context.Cognitives.FirstOrDefaultAsync(c => c.CognitiveId == tableId);
+                            break;
+                        case "elimination":
+                            tableData = await _context.Eliminations.FirstOrDefaultAsync(e => e.EliminationId == tableId);
+                            break;
+                        case "mobility":
+                            tableData = await _context.Mobilities.FirstOrDefaultAsync(m => m.MobilityId == tableId);
+                            break;
+                        case "nutrition":
+                            tableData = await _context.Nutritions.FirstOrDefaultAsync(n => n.NutritionId == tableId);
+                            break;
+                        case "progressnote":
+                            tableData = await _context.ProgressNotes.FirstOrDefaultAsync(pn => pn.ProgressNoteId == tableId);
+                            break;
+                        case "safety":
+                            tableData = await _context.Safeties.FirstOrDefaultAsync(s => s.SafetyId == tableId);
+                            break;
+                        case "skinandsensoryaid":
+                            tableData = await _context.SkinAndSensoryAids.FirstOrDefaultAsync(s => s.SkinAndSensoryAidsId == tableId);
+                            break;
+                        default:
+                            return BadRequest(new { message = "Invalid table type" });
+                    }
+                }
+
+                if (tableData == null)
+                {
+                    return NotFound("Table not found");
+                }
+
+                return Ok(tableData);
+            }
+            catch (Exception ex)
             {
-                return NotFound("Table not found");
+                return StatusCode(500, new { message = "Error retrieving data", error = ex.Message });
             }
-
-            return Ok(tableData);
 
         }
 
-        
         // Debug endpoint to diagnose database issues
         [HttpGet("debug/tables")]
         [Authorize(Roles = "Admin")]
@@ -266,6 +353,6 @@ namespace NursingEducationalBackend.Controllers
                     innerException = ex.InnerException?.Message
                 });
             }
-        }        
+        }
     }
 }

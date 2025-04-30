@@ -48,9 +48,10 @@ namespace NursingEducationalBackend.Utilities
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitEliminationData: {ex.Message}"); // Detailed logging
                 throw;
             }
         }
@@ -88,9 +89,10 @@ namespace NursingEducationalBackend.Utilities
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitMobilityData: {ex.Message}");
                 throw;
             }
         }
@@ -135,9 +137,10 @@ namespace NursingEducationalBackend.Utilities
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitNutritionData: {ex.Message}");
                 throw;
             }
         }
@@ -176,9 +179,10 @@ namespace NursingEducationalBackend.Utilities
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitCognitiveData: {ex.Message}");
                 throw;
             }
         }
@@ -218,9 +222,10 @@ namespace NursingEducationalBackend.Utilities
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitSafetyData: {ex.Message}");
                 throw;
             }
         }
@@ -262,9 +267,10 @@ namespace NursingEducationalBackend.Utilities
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitAdlData: {ex.Message}");
                 throw;
             }
         }
@@ -300,9 +306,10 @@ namespace NursingEducationalBackend.Utilities
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitBehaviourData: {ex.Message}");
                 throw;
             }
         }
@@ -343,9 +350,10 @@ namespace NursingEducationalBackend.Utilities
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitSkinAndSensoryAidData: {ex.Message}");
                 throw;
             }
         }
@@ -376,9 +384,10 @@ namespace NursingEducationalBackend.Utilities
                 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitProgressNoteData: {ex.Message}");
                 throw;
             }
         }
@@ -399,11 +408,13 @@ namespace NursingEducationalBackend.Utilities
                 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Error in SubmitProfileData: {ex.Message}");
                 throw;
             }
         }
     }
 }
+
