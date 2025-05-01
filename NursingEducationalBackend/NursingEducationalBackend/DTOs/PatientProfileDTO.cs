@@ -12,7 +12,7 @@ namespace NursingEducationalBackend.DTOs
         [Phone]
         public string NextOfKinPhone { get; set; }
 
-        public string FullName { get; set; } = null!;
+        public string FullName { get; set; } = null!;   
 
         public string Sex { get; set; } = null!;
 

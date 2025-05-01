@@ -110,39 +110,83 @@ namespace NursingEducationalBackend.Controllers
                     switch (tableType)
                     {
                         case "elimination":
-                            var eliminationResult = await handler.SubmitEliminationData(_context, value, record, patientIdFromTitle);
+                            var eliminationChanges = await handler.SubmitEliminationData(_context, value, record, patientIdFromTitle);
 
-                            if (eliminationResult is OkObjectResult okResult)
+                            if (eliminationChanges is OkObjectResult elimChanges && eliminationChanges != null)
                             {
-                                mostRecentlyChangedData["elimination"] = okResult.Value;
+                                mostRecentlyChangedData["elimination"] = elimChanges.Value;
                             }
                             break;
+
                         case "mobility":
-                            await handler.SubmitMobilityData(_context, value, record, patientIdFromTitle);
+                            var mobilityChanges = await handler.SubmitMobilityData(_context, value, record, patientIdFromTitle);
+                            if (mobilityChanges is OkObjectResult mobilChanges && mobilityChanges != null)
+                            {
+                                mostRecentlyChangedData["mobility"] = mobilChanges.Value;
+                            }
                             break;
                         case "nutrition":
-                            await handler.SubmitNutritionData(_context, value, record, patientIdFromTitle);
+                            var nutritionChanges = await handler.SubmitNutritionData(_context, value, record, patientIdFromTitle);
+                            if (nutritionChanges is OkObjectResult nutrChanges && nutritionChanges != null)
+                            {
+                                mostRecentlyChangedData["nutrition"] = nutrChanges.Value;
+                            }
                             break;
+
                         case "cognitive":
-                            await handler.SubmitCognitiveData(_context, value, record, patientIdFromTitle);
+                            var cognitiveChanges = await handler.SubmitCognitiveData(_context, value, record, patientIdFromTitle);
+                            if (cognitiveChanges is OkObjectResult cogChanges && cognitiveChanges != null)
+                            {
+                                mostRecentlyChangedData["cognitive"] = cogChanges.Value;
+                            }
                             break;
+
                         case "safety":
-                            await handler.SubmitSafetyData(_context, value, record, patientIdFromTitle);
+                            var safetyChanges = await handler.SubmitSafetyData(_context, value, record, patientIdFromTitle);
+                            if (safetyChanges is OkObjectResult safeChanges && safetyChanges != null)
+                            {
+                                mostRecentlyChangedData["safety"] = safeChanges.Value;
+                            }
                             break;
+
                         case "adl":
-                            await handler.SubmitAdlData(_context, value, record, patientIdFromTitle);
+                            var adlChanges = await handler.SubmitAdlData(_context, value, record, patientIdFromTitle);
+                            if (adlChanges is OkObjectResult changesToAdls && adlChanges != null)
+                            {
+                                mostRecentlyChangedData["adl"] = changesToAdls.Value;
+                            }
                             break;
+
                         case "behaviour":
-                            await handler.SubmitBehaviourData(_context, value, record, patientIdFromTitle);
+                            var behaviourChanges = await handler.SubmitBehaviourData(_context, value, record, patientIdFromTitle);
+                            if (behaviourChanges is OkObjectResult behaveChanges && behaviourChanges != null)
+                            {
+                                mostRecentlyChangedData["behaviour"] = behaveChanges.Value;
+                            }
                             break;
+
                         case "progressnote":
-                            await handler.SubmitProgressNoteData(_context, value, record, patientIdFromTitle);
+                            var progressNoteChanges = await handler.SubmitProgressNoteData(_context, value, record, patientIdFromTitle);
+                            if (progressNoteChanges is OkObjectResult progNoteChanges && progressNoteChanges != null)
+                            {
+                                mostRecentlyChangedData["progressnote"] = progNoteChanges.Value;
+                            }
                             break;
+
                         case "skinsensoryaid":
-                            await handler.SubmitSkinAndSensoryAidData(_context, value, record, patientIdFromTitle);
+                            var skinChanges = await handler.SubmitSkinAndSensoryAidData(_context, value, record, patientIdFromTitle);
+                            if (skinChanges is OkObjectResult skChanges && skinChanges != null)
+                            {
+                                mostRecentlyChangedData["skinsensoryaid"] = skChanges.Value;
+                            }
                             break;
+
                         case "profile":
-                            await handler.SubmitProfileData(_context, value, patient);
+                            var profileChanges = await handler.SubmitProfileData(_context, value, patient);
+                            if (profileChanges is OkObjectResult profChanges && profileChanges != null)
+                            {
+                                mostRecentlyChangedData["profile"] = profChanges.Value;
+                            }
                             break;
                     }
                 }
