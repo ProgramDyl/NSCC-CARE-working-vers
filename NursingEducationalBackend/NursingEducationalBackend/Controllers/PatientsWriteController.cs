@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NursingEducationalBackend.DTOs;
 using NursingEducationalBackend.Utilities;
+using Azure;
 
 namespace NursingEducationalBackend.Controllers
 {
@@ -68,6 +69,7 @@ namespace NursingEducationalBackend.Controllers
         [HttpPost("{id}/submit-data")]
         public async Task<ActionResult> SubmitData(int id, [FromBody] Dictionary<string, object> patientData)
         {
+            var mostRecentlyChangedData = new Dictionary<string, object>();
             try
             {
                 PatientDataSubmissionHandler handler = new PatientDataSubmissionHandler();
@@ -108,7 +110,12 @@ namespace NursingEducationalBackend.Controllers
                     switch (tableType)
                     {
                         case "elimination":
-                            await handler.SubmitEliminationData(_context, value, record, patientIdFromTitle);
+                            var eliminationResult = await handler.SubmitEliminationData(_context, value, record, patientIdFromTitle);
+
+                            if (eliminationResult is OkObjectResult okResult)
+                            {
+                                mostRecentlyChangedData["elimination"] = okResult.Value;
+                            }
                             break;
                         case "mobility":
                             await handler.SubmitMobilityData(_context, value, record, patientIdFromTitle);
@@ -139,8 +146,16 @@ namespace NursingEducationalBackend.Controllers
                             break;
                     }
                 }
-                
-                return Ok("Data submitted successfully");
+
+                var responseData = new
+                {
+                    message = "Data submitted successfully",
+                    data = mostRecentlyChangedData
+                };
+
+                return Ok(responseData);
+
+                //return Ok("Data submitted successfully");
             }
             catch (Exception ex)
             {

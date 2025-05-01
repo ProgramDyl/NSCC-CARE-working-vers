@@ -1,5 +1,15 @@
 [
   {
+    "ContainingType": "NursingEducationalBackend.Controllers.DeployTestController",
+    "Method": "InsertAdlTestData",
+    "RelativePath": "api/apiTest/Adl",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "NursingEducationalBackend.Controllers.AuthController",
     "Method": "Login",
     "RelativePath": "api/Auth/login",

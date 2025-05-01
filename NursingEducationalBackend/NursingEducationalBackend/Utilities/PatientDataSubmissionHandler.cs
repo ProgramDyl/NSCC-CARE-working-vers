@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NursingEducationalBackend.DTOs;
@@ -8,18 +9,34 @@ using System.Threading.Tasks;
 
 namespace NursingEducationalBackend.Utilities
 {
-    public class PatientDataSubmissionHandler
+    public class PatientDataSubmissionHandler : ControllerBase
     {
-        public async Task SubmitEliminationData(NursingDbContext _context, object value, Record record, int patientId)
+        public async Task<ActionResult> SubmitEliminationData(NursingDbContext _context, object value, Record record, int patientId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var eliminationData = JsonConvert.DeserializeObject<PatientEliminationDTO>(value.ToString());            
+                var eliminationData = JsonConvert.DeserializeObject<PatientEliminationDTO>(value.ToString());
                 var existingEntry = await _context.Eliminations.FindAsync(patientId);
+                var changedFields = new Dictionary<string, object>();
 
                 if (existingEntry != null)
                 {
+                    foreach (var prop in typeof(PatientEliminationDTO).GetProperties())
+                    {
+                        var entityProp = typeof(Elimination).GetProperty(prop.Name);
+                        if (entityProp != null)
+                        {
+                            var oldVal = entityProp.GetValue(existingEntry);
+                            var newVal = prop.GetValue(eliminationData);
+
+                            if (!Equals(oldVal, newVal))
+                            {
+                                changedFields[prop.Name] = newVal;
+                            }
+                        }
+                    }
+
                     _context.Entry(existingEntry).CurrentValues.SetValues(eliminationData);
                     await _context.SaveChangesAsync();
                 }
@@ -38,6 +55,18 @@ namespace NursingEducationalBackend.Utilities
                         CatheterInsertionDate = eliminationData.CatheterInsertionDate
                     };
 
+                    foreach (var prop in typeof(Elimination).GetProperties())
+                    {
+                        if(prop.Name != "EliminationId")
+                        {
+                            var val = prop.GetValue(eliminationEntity);
+                            if (val != null)
+                            {
+                                changedFields[prop.Name] = val;
+                            }
+                        }
+                    }
+
                     _context.Eliminations.Add(eliminationEntity);
                     await _context.SaveChangesAsync();
                     
@@ -46,8 +75,11 @@ namespace NursingEducationalBackend.Utilities
                     await _context.SaveChangesAsync();
                 }
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync();            
+
+                return Ok(changedFields);
             }
+
             catch (Exception)
             {
                 await transaction.RollbackAsync();
