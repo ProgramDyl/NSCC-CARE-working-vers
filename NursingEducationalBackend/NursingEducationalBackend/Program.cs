@@ -21,6 +21,11 @@ builder.Services.AddCors(options =>
             .AllowAnyOrigin()
             .AllowAnyMethod()
             .AllowAnyHeader());
+    options.AddPolicy("https://ambitious-tree-0dcd9e410.6.azurestaticapps.net",
+        builder => builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
 });
 
 var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
