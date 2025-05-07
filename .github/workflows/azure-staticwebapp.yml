@@ -22,6 +22,16 @@ jobs:
         with:
           submodules: true
           lfs: false
+          
+      # Add this new step to verify the secret exists
+      - name: Verify deployment token exists
+        run: |
+          if [ -z "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" ]; then
+            echo "::error::Secret AZURE_STATIC_WEB_APPS_API_TOKEN is empty or not set"
+            exit 1
+          else
+            echo "Secret exists (value hidden for security)"
+          fi
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
       - name: Get Id Token
@@ -38,6 +48,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AMBITIOUS_TREE_0DCD9E410 }}
           action: "upload"
+          
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "./frontend" # App source code path
