@@ -9,6 +9,11 @@ on:
     branches:
       - frontend
 
+env:
+  AZURE_STATIC_WEB_APP_NAME: 'NSCC-CARE-working-vers'
+  AZURE_STATIC_WEBAPP_PACKAGE_PATH: '.'
+  VITE_API_URL: 'https://nursingdemo-e2exe0gzhhhkcdea.eastus-01.azurewebsites.net'
+
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
